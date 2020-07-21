@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>room</title>
+    <!--<script src="../../socket.io/socket.io.js"></script>-->
+    <script src="/js/socket.io.js"></script>
+
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <script src="/js/jquery-3.5.1.min.js"></script>
+    <script src="/js/popper.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+
+    <link href="/css/room.css" rel="stylesheet" type="text/css">
+
+</head>
+<body>
+<div id='stars'></div>
+<div id='stars2'></div>
+<div id='stars3'></div>
+<div id='horizon'>
+    <div class='glow'></div>
+</div>
+<div id='earth'></div>
+
+<div class="container h-100">
+    <div class="row h-100 justify-content-center align-items-center">
+        <div class="col-md-8 col-sm-12">
+            <div class="card" id="login">
+                <div class="card-body">
+                    <div id="connect-user-container"></div>
+                    <div id="typing-container" style="color: #000;text-align: center;height: 23px;"></div>
+                    <div id="message-container"></div>
+                    <form id="send-container">
+                        <input class="form-control" type="text" id="message-input">
+                        <button type="submit" id="send-button" class="btn btn-primary">Send</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    const socket = io.connect('http://localhost:3000');
+    const messageContainer = document.getElementById('message-container')
+    const messageForm = document.getElementById('send-container')
+    const messageInput = document.getElementById('message-input')
+
+    var token = getUrlParameter('token');//'MUAwOTEyODA2OTk1MkAxNTk0NjIzNzkwNjUy';
+    var roomId = atob(getUrlParameter('r'));//MQ==
+
+    function getUrlParameter(name) {
+        name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+        var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+        var results = regex.exec(location.search);
+        return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+    }
+
+    $(function () {
+        //const name = prompt('What is your name?')
+        appendMessage('You joined')
+        socket.emit('new-user', JSON.stringify({token: token, roomId: roomId}))
+
+        socket.on('chat-message', data => {
+            // console.log(data);
+            appendMessage(`${data.name}: ${data.message}`)
+            document.getElementById("typing-container").innerHTML = '';
+        })
+
+        socket.on('user-connected', name => {
+            $('#connect-user-container').fadeIn('slow');
+            $('#connect-user-container').html(`${name} connected`);
+            $('#connect-user-container').addClass('green');
+            setTimeout(function () {
+                $('#connect-user-container').html('');
+                $('#connect-user-container').removeClass();
+            }, 5000)
+        })
+
+        /*socket.on('user-disconnected', name => {
+            $('#connect-user-containe').html(`${name} disconnected`);
+            $('#connect-user-containe').addClass('red');
+            setTimeout(function () {
+                $('#connect-user-containe').html('');
+                $('#connect-user-containe').removeClass();
+            }, 5000)
+            //appendMessage(`${name} disconnected`)
+        })*/
+
+        messageForm.addEventListener('submit', e => {
+            e.preventDefault()
+            const message = {message: messageInput.value, token: token, roomId: roomId}
+            appendMessage(`You: ${message.message}`)
+            socket.emit('send-chat-message', JSON.stringify(message))
+            messageInput.value = ''
+        })
+
+        messageInput.addEventListener("keypress", () => {
+            socket.emit('typing', JSON.stringify({token: token, roomId: roomId}))
+        })
+
+        messageInput.addEventListener("keyup", () => {
+            socket.emit('not-typing', JSON.stringify({token: token, roomId: roomId}))
+        })
+
+        socket.on('typing', name => {
+            typingMessage(`${name} is typing a message ...`)
+        })
+
+        socket.on('not-typing', name => {
+            //document.getElementById("typing-container").innerHTML = '';
+        })
+    })
+
+    function appendMessage(message) {
+        const messageElement = document.createElement('div')
+        messageElement.innerText = message
+        messageContainer.append(messageElement)
+    }
+
+    function typingMessage(message) {
+        document.getElementById("typing-container").innerHTML = message;
+    }
+</script>
+</body>
+</html>

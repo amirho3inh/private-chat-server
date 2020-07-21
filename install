@@ -1,0 +1,16 @@
+npm install socket.io
+
+npm install --save-dev nodemon
+npm install -g nodemon
+
+npm install --save-dev mysql
+
+npm install express
+
+npm install ejs
+
+npm install body-parser --save
+
+npm install cors
+
+

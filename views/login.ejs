@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>login</title>
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
+
+    <link href="/css/login.css" rel="stylesheet" type="text/css">
+</head>
+
+<body>
+<div id='stars'></div>
+<div id='stars2'></div>
+<div id='stars3'></div>
+<div id='horizon'>
+    <div class='glow'></div>
+</div>
+<div id='earth'></div>
+
+<div class="container h-100">
+    <div class="row h-100 justify-content-center align-items-center">
+        <form class="col-md-6 col-sm-12">
+
+            <div class="card" id="login">
+                <div class="card-body text-center">
+                    <div class="form-group">
+                        <label style="color: #000;" for="mobileInput">mobile</label>
+                        <input type="text" class="form-control" id="mobileInput" placeholder="09*********">
+                    </div>
+                    <a class="btn btn-primary" href="javascript:login()" role="button">login or register</a>
+                </div>
+            </div>
+
+            <div class="card" id="listRoomsBox" style="display: none;">
+                <div class="card-body">
+                    <div id="listRoomsMessage"></div>
+                    <table class="table" id="listRooms">
+                        <thead class="thead-light">
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">title</th>
+                            <th scope="col">type</th>
+                            <th scope="col">max client</th>
+                            <th scope="col"></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    let url = 'http://localhost:3000';
+    let token = '';
+    function login() {
+        $('#listRoomsMessage').html('');
+        let mobile = $('#mobileInput').val();
+        var data = JSON.stringify({"mobile":`${mobile}`});
+
+        var xhr = new XMLHttpRequest();
+        xhr.withCredentials = true;
+
+        xhr.addEventListener("readystatechange", function() {
+            if(this.readyState === 4) {
+                var data = JSON.parse(this.responseText);
+                if(data.message==''){
+                    $('#login').hide();
+                    $('#listRoomsBox').show();
+                    token = data.data.token;
+                    // console.log(data.data);
+                    if(data.data.rooms.length == 0){
+                        $('#listRooms tbody').hide();
+                        $('#listRoomsMessage').html('no data');
+                        return;
+                    }
+                    
+                    let number = 1;
+                    let max_client = '';
+                    let html = '<tr>';
+                    $.each(data.data.rooms, function (key, value) {
+                        html += `<th scope="row">${number}</th>`;
+                        html += `<td>${value.title}</td>`;
+                        html += `<td>${value.type}</td>`;
+                        if(value.max_client == 0){
+                            max_client = 'unlimited';
+                        }else{
+                            max_client = value.max_client;
+                        }
+                        html += `<td>${max_client}</td>`;
+                        html += `<td><a class="btn btn-primary" href='/room/${value.id}?token=${token}?r=${btoa(value.id)}' role="button">enter</a></td>`;
+                        number++;
+                    })
+                    html += '</tr>';
+                    
+                    $('#listRooms tbody').html(html);
+                }else {
+                    switch (data.message) {
+                        case 'notInserted':
+                            alert('notInserted');
+                            break;
+                        case 'inserted':
+                            alert('inserted. try again');
+                            break;
+                        case 'noData':
+                            alert('noData');
+                            break;
+                    }
+                }
+            }
+        });
+
+        xhr.open("POST", url+"/login");
+        xhr.setRequestHeader("Content-Type", "application/json");
+
+        xhr.send(data);
+    }
+</script>
+</body>
+</html>
